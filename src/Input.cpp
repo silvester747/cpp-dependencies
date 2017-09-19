@@ -243,8 +243,8 @@ static bool IsAutomaticlyGeneratedSection(std::string line) {
            strstr(line.c_str(), "set(INTERFACE_FILES");
 }
 
-static void ReadCmakelist(const Configuration& config, std::unordered_map<std::string, Component *> &components,
-                          const filesystem::path &path) {
+static Component& ReadCmakelist(const Configuration& config, std::unordered_map<std::string, Component *> &components,
+                                const filesystem::path &path) {
     streams::ifstream in(path);
     std::string line;
     Component &comp = AddComponentDefinition(components, path.parent_path());
@@ -302,6 +302,16 @@ static void ReadCmakelist(const Configuration& config, std::unordered_map<std::s
         parenLevel = newParenLevel;
     } while (in.good());
     assert(parenLevel == 0 || (printf("final level of parentheses=%d\n", parenLevel), 0));
+    return comp;
+}
+
+void AddToParentComponent(std::unordered_map<std::string, Component*>& components,
+                          Component& comp)
+{
+    const auto& parent = comp.root.parent_path();
+    if (!parent.empty()) {
+      AddComponentDefinition(components, parent).children.insert(&comp);
+    }
 }
 
 void LoadFileList(const Configuration& config,
@@ -332,7 +342,8 @@ void LoadFileList(const Configuration& config,
         if (inferredComponents) AddComponentDefinition(components, parent);
 
         if (it->path().filename() == "CMakeLists.txt") {
-            ReadCmakelist(config, components, it->path());
+            auto& comp = ReadCmakelist(config, components, it->path());
+            AddToParentComponent(components, comp);
         } else if (filesystem::is_regular_file(it->status())) {
             if (it->path().generic_string().find("CMakeAddon.txt") != std::string::npos) {
                 AddComponentDefinition(components, parent).hasAddonCmake = true;

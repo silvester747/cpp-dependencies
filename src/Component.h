@@ -78,6 +78,7 @@ struct Component {
     std::unordered_set<Component *> circulars;
     std::set<std::string> buildAfters;
     std::unordered_set<File *> files;
+    std::unordered_set<Component *> children;
     size_t loc() const {
         size_t l = 0;
         for (auto f : files) { l += f->loc; }

@@ -7,6 +7,7 @@
 #include "Input.h"
 #include "FilesystemInclude.h"
 #include "FstreamInclude.h"
+#include <algorithm>
 #include <sstream>
 
 void CreateCMakeProject(const std::string& projectName,
@@ -71,6 +72,42 @@ TEST(Input_Aliases)
       ASSERT(comp.type == "add_service");
     } else {
       ASSERT(comp.CmakeName() == "ROOT");
+    }
+  }
+}
+
+TEST(Input_Children)
+{
+  TemporaryWorkingDirectory workDir(name);
+
+  CreateCMakeProject("BigComponent", "add_library", workDir());
+  CreateCMakeProject("SubComponentA", "add_library", workDir() / "BigComponent");
+  streams::ofstream(workDir() / "CMakeLists.txt").close();
+
+  Configuration config;
+  std::unordered_map<std::string, Component*> components;
+  std::unordered_map<std::string, File> files;
+
+  LoadFileList(config, components, files, workDir(), true, false);
+
+  ASSERT(components.size() == 3); // 2 components + ROOT
+
+  for (auto& pair : components) {
+    const Component& comp = *pair.second;
+
+    if (comp.CmakeName() == "BigComponent") {
+      ASSERT(comp.children.size() == 1);
+      ASSERT(std::count_if(comp.children.cbegin(),
+                           comp.children.cend(),
+                           [](const Component* c) { return c->CmakeName() == "SubComponentA"; }));
+    } else if (comp.CmakeName() == "SubComponentA") {
+      ASSERT(comp.children.size() == 0);
+    } else {
+      ASSERT(comp.CmakeName() == "ROOT");
+      ASSERT(comp.children.size() == 1);
+      ASSERT(std::count_if(comp.children.cbegin(),
+                           comp.children.cend(),
+                           [](const Component* c) { return c->CmakeName() == "BigComponent"; }));
     }
   }
 }
