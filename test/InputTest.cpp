@@ -55,7 +55,7 @@ TEST(Input_Aliases)
   std::unordered_map<std::string, Component*> components;
   std::unordered_map<std::string, File> files;
 
-  LoadFileList(config, components, files, workDir(), true, false);
+  LoadFileList(config, components, files, workDir(), false, false);
 
   ASSERT(components.size() == 5);
 
@@ -88,7 +88,7 @@ TEST(Input_Children)
   std::unordered_map<std::string, Component*> components;
   std::unordered_map<std::string, File> files;
 
-  LoadFileList(config, components, files, workDir(), true, false);
+  LoadFileList(config, components, files, workDir(), false, false);
 
   ASSERT(components.size() == 3); // 2 components + ROOT
 
@@ -108,6 +108,50 @@ TEST(Input_Children)
       ASSERT(std::count_if(comp.children.cbegin(),
                            comp.children.cend(),
                            [](const Component* c) { return c->CmakeName() == "BigComponent"; }));
+    }
+  }
+}
+
+TEST(Input_Children_Inferred)
+{
+  TemporaryWorkingDirectory workDir(name);
+
+  CreateCMakeProject("BigComponent", "add_library", workDir());
+  filesystem::create_directories(workDir() / "BigComponent" / "NewSubComponent");
+  streams::ofstream(workDir() / "BigComponent" / "NewSubComponent" / "Source.c").close();
+  filesystem::create_directories(workDir() / "NewComponent");
+  streams::ofstream(workDir() / "NewComponent" / "Source.c").close();
+  streams::ofstream(workDir() / "CMakeLists.txt").close();
+
+  Configuration config;
+  std::unordered_map<std::string, Component*> components;
+  std::unordered_map<std::string, File> files;
+
+  LoadFileList(config, components, files, workDir(), true, false);
+
+  ASSERT(components.size() == 4); // 3 components + ROOT
+
+  for (auto& pair : components) {
+    const Component& comp = *pair.second;
+
+    if (comp.CmakeName() == "BigComponent") {
+      ASSERT(comp.children.size() == 1);
+      ASSERT(std::count_if(comp.children.cbegin(),
+                           comp.children.cend(),
+                           [](const Component* c) { return c->CmakeName() == "BigComponent.NewSubComponent"; }) == 1);
+    } else if (comp.CmakeName() == "BigComponent.NewSubComponent") {
+      ASSERT(comp.children.size() == 0);
+    } else if (comp.CmakeName() == "NewComponent") {
+      ASSERT(comp.children.size() == 0);
+    } else {
+      ASSERT(comp.CmakeName() == "ROOT");
+      ASSERT(comp.children.size() == 2);
+      ASSERT(std::count_if(comp.children.cbegin(),
+                           comp.children.cend(),
+                           [](const Component* c) { return c->CmakeName() == "BigComponent"; }) == 1);
+      ASSERT(std::count_if(comp.children.cbegin(),
+                           comp.children.cend(),
+                           [](const Component* c) { return c->CmakeName() == "NewComponent"; }) == 1);
     }
   }
 }

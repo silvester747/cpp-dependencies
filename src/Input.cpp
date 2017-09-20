@@ -339,7 +339,10 @@ void LoadFileList(const Configuration& config,
             continue;
         }       
 
-        if (inferredComponents) AddComponentDefinition(components, parent);
+        if (inferredComponents) {
+            auto& comp = AddComponentDefinition(components, parent);
+            AddToParentComponent(components, comp);
+        }
 
         if (it->path().filename() == "CMakeLists.txt") {
             auto& comp = ReadCmakelist(config, components, it->path());
