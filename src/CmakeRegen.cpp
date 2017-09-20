@@ -175,13 +175,10 @@ void RegenerateCmakeAddDependencies(std::ostream& o, const Component& comp) {
 void RegenerateCmakeAddSubdirectory(std::ostream& o,
                                     const Component& comp)
 {
-    // Temporary uses a set to sort subdirectories
+    // Sort subdirectories using ordered set
     std::set<std::string> subdirs;
-    filesystem::directory_iterator it(comp.root), end;
-    for (; it != end; ++it) {
-        if (filesystem::is_regular_file(it->path() / "CMakeLists.txt")) {
-            subdirs.insert(it->path().filename().generic_string());
-        }
+    for (auto child : comp.children) {
+        subdirs.insert(child->root.parent_path().filename().generic_string());
     }
     for (auto subdir : subdirs) {
         o << "add_subdirectory(" << subdir << ")\n";
