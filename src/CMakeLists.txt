@@ -9,6 +9,7 @@ endif()
 
 add_library(cpp_dependencies_lib STATIC
   Analysis.h
+  BazelRegen.h
   CmakeRegen.h
   Component.h
   Configuration.h
@@ -17,6 +18,7 @@ add_library(cpp_dependencies_lib STATIC
   Output.h
 
   Analysis.cpp
+  BazelRegen.cpp
   CmakeRegen.cpp
   Component.cpp
   Configuration.cpp

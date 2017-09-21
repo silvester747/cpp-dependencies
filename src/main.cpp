@@ -15,6 +15,7 @@
  */
 
 #include "Analysis.h"
+#include "BazelRegen.h"
 #include "CmakeRegen.h"
 #include "Component.h"
 #include "Configuration.h"
@@ -275,7 +276,8 @@ private:
         filesystem::current_path(projectRoot);
         if (args.empty()) {
             for (auto &c : components) {
-                RegenerateCmakeFilesForComponent(config, c.second, dryRun, false);
+                //RegenerateCmakeFilesForComponent(config, c.second, dryRun, false);
+                RegenerateBazelFilesForComponent(config, c.second, dryRun, false);
             }
         } else {
             bool writeToStdoutInstead = false;
@@ -289,12 +291,14 @@ private:
                 if (recursive) {
                     for (auto& c : components) {
                         if (strstr(c.first.c_str(), target.c_str())) {
-                            RegenerateCmakeFilesForComponent(config, c.second, dryRun, writeToStdoutInstead);
+                            //RegenerateCmakeFilesForComponent(config, c.second, dryRun, writeToStdoutInstead);
+                            RegenerateBazelFilesForComponent(config, c.second, dryRun, writeToStdoutInstead);
                         }
                     }
                 } else {
                     if (components.find(target) != components.end()) {
-                        RegenerateCmakeFilesForComponent(config, components[target], dryRun, writeToStdoutInstead);
+                        //RegenerateCmakeFilesForComponent(config, components[target], dryRun, writeToStdoutInstead);
+                        RegenerateBazelFilesForComponent(config, components[target], dryRun, writeToStdoutInstead);
                     } else {
                         std::cout << "Target '" << target << "' not found\n";
                     }
